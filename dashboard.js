@@ -111,33 +111,41 @@ const TABLE_CONFIGS = {
 
 /* ---------- Boot ---------- */
 (async function boot(){
-  CURRENT_PROFILE = await requireAuth();
-  if(!CURRENT_PROFILE) return;
+  try {
+    CURRENT_PROFILE = await requireAuth();
+    if(!CURRENT_PROFILE) return;
 
-  document.getElementById('userName').textContent = CURRENT_PROFILE.full_name || 'Officer';
-  document.getElementById('roleBadge').textContent = (CURRENT_PROFILE.role || 'officer').replace(/_/g,' ');
+    document.getElementById('userName').textContent = CURRENT_PROFILE.full_name || 'Officer';
+    document.getElementById('roleBadge').textContent = (CURRENT_PROFILE.role || 'officer').replace(/_/g,' ');
 
-  if(!IS_SUPABASE_CONFIGURED){
-    DEMO_STORE = {
-      officers: DEMO_DATA.officers.map((o,i)=>({ id:'demo-'+i, ...o, role: o.position.toLowerCase().replace(/ /g,'_') })),
-      members: DEMO_DATA.members.map((m,i)=>({ id:'demo-'+i, ...m })),
-      announcements: DEMO_DATA.announcements.map(a=>({ ...a, status:'published' })),
-      events: DEMO_DATA.events.map(e=>({...e})),
-      gallery: DEMO_DATA.gallery.map(g=>({...g, approved:true})),
-      social_links: DEMO_DATA.socials.map((s,i)=>({ id:'demo-'+i, ...s }))
-    };
-  }
+    if(!IS_SUPABASE_CONFIGURED){
+      DEMO_STORE = {
+        officers: DEMO_DATA.officers.map((o,i)=>({ id:'demo-'+i, ...o, role: o.position.toLowerCase().replace(/ /g,'_') })),
+        members: DEMO_DATA.members.map((m,i)=>({ id:'demo-'+i, ...m })),
+        announcements: DEMO_DATA.announcements.map(a=>({ ...a, status:'published' })),
+        events: DEMO_DATA.events.map(e=>({...e})),
+        gallery: DEMO_DATA.gallery.map(g=>({...g, approved:true})),
+        social_links: DEMO_DATA.socials.map((s,i)=>({ id:'demo-'+i, ...s }))
+      };
+    }
 
-  renderNav();
-  goToSection(location.hash.replace('#','') || 'overview');
+    renderNav();
+    goToSection(location.hash.replace('#','') || 'overview');
 
-  document.getElementById('mobileSideToggle')?.addEventListener('click', ()=>{
-    document.getElementById('dashSide').classList.toggle('open');
-  });
-  window.addEventListener('resize', ()=>{
+    document.getElementById('mobileSideToggle')?.addEventListener('click', ()=>{
+      document.getElementById('dashSide').classList.toggle('open');
+    });
+    window.addEventListener('resize', ()=>{
+      document.getElementById('mobileSideToggle').style.display = window.innerWidth <= 900 ? 'inline-flex' : 'none';
+    });
     document.getElementById('mobileSideToggle').style.display = window.innerWidth <= 900 ? 'inline-flex' : 'none';
-  });
-  document.getElementById('mobileSideToggle').style.display = window.innerWidth <= 900 ? 'inline-flex' : 'none';
+  } catch(err) {
+    console.error(err);
+    const panel = document.createElement('div');
+    panel.style.cssText = 'position:fixed;bottom:10px;left:10px;right:10px;background:#900;color:#fff;font-family:monospace;font-size:12px;padding:14px;border-radius:8px;z-index:9999;white-space:pre-wrap;';
+    panel.textContent = 'BOOT ERROR: ' + (err.message || err) + '\n\n' + (err.stack || '');
+    document.body.appendChild(panel);
+  }
 })();
 
 function renderNav(){
@@ -344,16 +352,4 @@ async function saveCrudRecord(config, existing, payload){
       const store = DEMO_STORE[config.table];
       if(existing){
         Object.assign(store.find(r=>r.id===existing.id), payload);
-      } else {
-        store.unshift({ id:'demo-'+Date.now(), ...payload });
-      }
-      showToast(`${config.singular} saved (preview mode — not persisted).`, 'success');
-    } else {
-      if(existing){
-        const { error } = await supabase.from(config.table).update(payload).eq('id', existing.id);
-        if(error) throw error;
-      } else {
-        const { error } = await supabase.from(config.table).insert(payload);
-        if(error) throw error;
-      }
-      showToast(`${config.sin
+      } els
