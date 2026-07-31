@@ -239,7 +239,7 @@ function goToSection(id){
   else document.getElementById('dashContent').innerHTML = `<div class="empty-state">Section coming soon.</div>`;
 }
 
-function sectionSubtitle(id){
+  function sectionSubtitle(id){
   return {
     overview:'A quick snapshot of iConnect content.',
     officers:'Add, edit, or remove officer profiles and their roles.',
@@ -364,8 +364,9 @@ function renderField(f, record){
       <label for="${id}_file">${f.label}</label>
       <input type="file" id="${id}_file" accept="image/*" data-bucket="${f.bucket}" data-target="${id}">
       <input type="hidden" id="${id}" value="${escapeHtml(val||'')}" ${f.required?'data-required="true"':''}>
-      <div id="${id}_status" class="field-hint">${val ? 'Current photo shown below — choose a new file to replace it.
-                                                  </div>`;
+      <div id="${id}_status" class="field-hint">${val ? 'Current photo shown below — choose a new file to replace it.' : 'No photo yet — choose a file to upload.'}</div>
+      <div id="${id}_preview">${val ? `<img src="${val}" style="max-width:140px;max-height:140px;border-radius:10px;margin-top:8px;object-fit:cover;">` : ''}</div>
+    </div>`;
   }
   if(f.type === 'textarea') return `<div class="field"><label for="${id}">${f.label}</label><textarea id="${id}" ${f.required?'required':''}>${escapeHtml(val||'')}</textarea></div>`;
   if(f.type === 'select') return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}">${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
