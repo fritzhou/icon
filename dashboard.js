@@ -45,7 +45,7 @@ const TABLE_CONFIGS = {
       {key:'grade_section', label:'Grade & Section', type:'text'},
       {key:'bio', label:'Short Bio', type:'textarea'},
       {key:'skills', label:'Skills (comma-separated)', type:'tags'},
-      {key:'photo_url', label:'Profile Photo URL', type:'text'},
+      {key:'photo_url', label:'Profile Photo', type:'image', bucket:'avatars'},
     ]
   },
   members: {
@@ -56,7 +56,7 @@ const TABLE_CONFIGS = {
       {key:'grade_section', label:'Grade & Section', type:'text'},
       {key:'committee', label:'Committee / Role', type:'text'},
       {key:'bio', label:'Short Description', type:'textarea'},
-      {key:'photo_url', label:'Profile Photo URL', type:'text'},
+      {key:'photo_url', label:'Profile Photo', type:'image', bucket:'avatars'},
     ]
   },
   announcements: {
@@ -65,7 +65,7 @@ const TABLE_CONFIGS = {
     fields:[
       {key:'title', label:'Title', type:'text', required:true},
       {key:'description', label:'Description', type:'textarea', required:true},
-      {key:'cover_image', label:'Cover Image URL', type:'text'},
+      {key:'cover_image', label:'Cover Image', type:'image', bucket:'covers'},
       {key:'date_posted', label:'Date Posted', type:'date'},
       {key:'posted_by', label:'Posted By', type:'text'},
       {key:'status', label:'Status', type:'select', options:['draft','pending','published'], default:'published'},
@@ -80,7 +80,7 @@ const TABLE_CONFIGS = {
       {key:'time', label:'Time', type:'text'},
       {key:'venue', label:'Venue', type:'text'},
       {key:'description', label:'Description', type:'textarea'},
-      {key:'banner_url', label:'Banner Image URL', type:'text'},
+      {key:'banner_url', label:'Banner Image', type:'image', bucket:'covers'},
       {key:'status', label:'Status', type:'select', options:['upcoming','ongoing','completed'], default:'upcoming'},
     ]
   },
@@ -90,7 +90,7 @@ const TABLE_CONFIGS = {
     fields:[
       {key:'title', label:'Title', type:'text', required:true},
       {key:'event', label:'Event / Album', type:'text'},
-      {key:'image_url', label:'Image URL', type:'text', required:true},
+      {key:'image_url', label:'Photo', type:'image', bucket:'gallery', required:true},
       {key:'caption', label:'Caption', type:'textarea'},
       {key:'uploaded_by', label:'Uploaded By', type:'text'},
       {key:'upload_date', label:'Upload Date', type:'date'},
@@ -272,6 +272,7 @@ function openCrudModal(config, record){
     </form>`;
   document.getElementById('modalOverlay').classList.add('open');
   document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  wireImageUploads(config);
 
   document.getElementById('crudForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
@@ -289,12 +290,52 @@ function openCrudModal(config, record){
 function renderField(f, record){
   const val = record ? record[f.key] : (f.default ?? '');
   const id = 'f_'+f.key;
+  if(f.type === 'image'){
+    return `<div class="field">
+      <label for="${id}_file">${f.label}</label>
+      <input type="file" id="${id}_file" accept="image/*" data-bucket="${f.bucket}" data-target="${id}">
+      <input type="hidden" id="${id}" value="${escapeHtml(val||'')}" ${f.required?'data-required="true"':''}>
+      <div id="${id}_status" class="field-hint">${val ? 'Current photo shown below — choose a new file to replace it.' : 'No photo yet — choose a file to upload.'}</div>
+      <div id="${id}_preview">${val ? `<img src="${val}" style="max-width:140px;max-height:140px;border-radius:10px;margin-top:8px;object-fit:cover;">` : ''}</div>
+    </div>`;
+  }
   if(f.type === 'textarea') return `<div class="field"><label for="${id}">${f.label}</label><textarea id="${id}" ${f.required?'required':''}>${escapeHtml(val||'')}</textarea></div>`;
   if(f.type === 'select') return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}">${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
   if(f.type === 'checkbox') return `<div class="field"><label><input type="checkbox" id="${id}" ${val?'checked':''} style="width:auto;margin-right:8px;"> ${f.label}</label></div>`;
   if(f.type === 'tags') return `<div class="field"><label for="${id}">${f.label}</label><input type="text" id="${id}" value="${escapeHtml(Array.isArray(val)?val.join(', '):(val||''))}"><div class="field-hint">Separate with commas</div></div>`;
   if(f.type === 'date') return `<div class="field"><label for="${id}">${f.label}</label><input type="date" id="${id}" value="${val||''}" ${f.required?'required':''}></div>`;
   return `<div class="field"><label for="${id}">${f.label}</label><input type="text" id="${id}" value="${escapeHtml(val||'')}" ${f.required?'required':''}></div>`;
+}
+
+function wireImageUploads(config){
+  config.fields.filter(f=>f.type==='image').forEach(f=>{
+    const id = 'f_'+f.key;
+    const fileInput = document.getElementById(id+'_file');
+    if(!fileInput) return;
+    fileInput.addEventListener('change', async ()=>{
+      const file = fileInput.files[0];
+      if(!file) return;
+      const statusEl = document.getElementById(id+'_status');
+      const hiddenInput = document.getElementById(id);
+      const previewEl = document.getElementById(id+'_preview');
+      if(!IS_SUPABASE_CONFIGURED){
+        statusEl.textContent = 'Connect Supabase to enable uploads.';
+        return;
+      }
+      statusEl.textContent = 'Uploading…';
+      try{
+        const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g,'_')}`;
+        const { error: upErr } = await supabase.storage.from(f.bucket).upload(path, file, { upsert:true });
+        if(upErr) throw upErr;
+        const { data } = supabase.storage.from(f.bucket).getPublicUrl(path);
+        hiddenInput.value = data.publicUrl;
+        previewEl.innerHTML = `<img src="${data.publicUrl}" style="max-width:140px;max-height:140px;border-radius:10px;margin-top:8px;object-fit:cover;">`;
+        statusEl.textContent = 'Uploaded ✓';
+      }catch(err){
+        statusEl.textContent = 'Upload failed: ' + (err.message || 'unknown error');
+      }
+    });
+  });
 }
 
 async function saveCrudRecord(config, existing, payload){
@@ -315,89 +356,4 @@ async function saveCrudRecord(config, existing, payload){
         const { error } = await supabase.from(config.table).insert(payload);
         if(error) throw error;
       }
-      showToast(`${config.singular} saved.`, 'success');
-    }
-    closeModal();
-    renderCrudSection(config);
-  }catch(err){
-    showToast(err.message || 'Something went wrong.', 'error');
-  }
-}
-
-async function confirmDelete(config, id){
-  if(!confirm(`Delete this ${config.singular.toLowerCase()}? This can't be undone.`)) return;
-  try{
-    if(!IS_SUPABASE_CONFIGURED){
-      DEMO_STORE[config.table] = DEMO_STORE[config.table].filter(r=>String(r.id)!==id);
-      showToast(`${config.singular} deleted (preview mode).`, 'success');
-    } else {
-      const { error } = await supabase.from(config.table).delete().eq('id', id);
-      if(error) throw error;
-      showToast(`${config.singular} deleted.`, 'success');
-    }
-    renderCrudSection(config);
-  }catch(err){
-    showToast(err.message || 'Could not delete.', 'error');
-  }
-}
-
-function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
-document.addEventListener('click', (e)=>{ if(e.target.id === 'modalOverlay') closeModal(); });
-
-/* ---------- Approvals (adviser) ---------- */
-async function renderApprovals(){
-  const content = document.getElementById('dashContent');
-  content.innerHTML = `<div class="dash-card" style="padding:24px;"><p>The adviser reviews announcements and gallery uploads before they go public. Approve items from the Announcements and Gallery sections once granted edit access, or coordinate with the President for pending items.</p></div>`;
-}
-
-/* ---------- Settings ---------- */
-async function renderSettings(){
-  const content = document.getElementById('dashContent');
-  content.innerHTML = `
-    <div class="dash-card" style="padding:28px; max-width:640px;">
-      <h3 style="font-size:1.05rem;">Homepage Statistics</h3>
-      <p style="font-size:.85rem;">These numbers power the counters on the homepage.</p>
-      <form id="statsForm">
-        <div class="grid grid-2">
-          <div class="field"><label>Total Members</label><input type="number" id="s_members"></div>
-          <div class="field"><label>Officers</label><input type="number" id="s_officers"></div>
-          <div class="field"><label>Events</label><input type="number" id="s_events"></div>
-          <div class="field"><label>Projects</label><input type="number" id="s_projects"></div>
-        </div>
-        <button class="btn btn-primary" type="submit">Save Statistics</button>
-      </form>
-    </div>
-    <div class="dash-card" style="padding:28px; max-width:640px; margin-top:22px;">
-      <h3 style="font-size:1.05rem;">Social Links</h3>
-      <p style="font-size:.85rem;">Manage the platforms shown on the Socials page and footer.</p>
-      <div id="socialsMiniList"></div>
-      <button class="btn btn-outline btn-sm" id="addSocialBtn" style="margin-top:12px;">+ Add Platform</button>
-    </div>`;
-
-  const stats = await getStats();
-  document.getElementById('s_members').value = stats.members;
-  document.getElementById('s_officers').value = stats.officers;
-  document.getElementById('s_events').value = stats.events;
-  document.getElementById('s_projects').value = stats.projects;
-  document.getElementById('statsForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const payload = {
-      members:+document.getElementById('s_members').value,
-      officers:+document.getElementById('s_officers').value,
-      events:+document.getElementById('s_events').value,
-      projects:+document.getElementById('s_projects').value
-    };
-    if(!IS_SUPABASE_CONFIGURED){ showToast('Statistics saved (preview mode).', 'success'); return; }
-    const { error } = await supabase.from('site_stats').update(payload).eq('id', 1);
-    if(error) showToast(error.message, 'error'); else showToast('Statistics saved.', 'success');
-  });
-
-  const socials = await getSocials();
-  document.getElementById('socialsMiniList').innerHTML = socials.map(s=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-soft);">
-      <span style="font-size:.88rem;"><strong>${escapeHtml(s.platform)}</strong> — ${escapeHtml(s.url)}</span>
-    </div>`).join('');
-  document.getElementById('addSocialBtn').addEventListener('click', ()=> openCrudModal(TABLE_CONFIGS.social_links, null));
-}
-
-window.addEventListener('hashchange', ()=> goToSection(location.hash.replace('#','')));
+      showToast(`${config.sin
