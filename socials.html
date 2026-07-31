@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Socials — iConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container nav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8.1 7.3 10.6 15.4M15.9 7.3 13.4 15.4M8.3 6h7.4"/></svg></span>iConnect</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="officers.html">Officers &amp; Members</a>
+      <a href="announcements.html">Announcements</a><a href="events.html">Events</a><a href="gallery.html">Documentation</a>
+      <a href="socials.html">Socials</a>
+    </nav>
+    <div class="nav-actions"><a href="dashboard.html" class="btn btn-ghost btn-sm">Admin Dashboard</a></div>
+    <button class="nav-toggle" aria-label="Open menu"><span></span></button>
+  </div>
+</header>
+<div class="mobile-menu"><div class="mobile-panel">
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="officers.html">Officers &amp; Members</a>
+  <a href="announcements.html">Announcements</a><a href="events.html">Events</a><a href="gallery.html">Documentation</a>
+  <a href="socials.html">Socials</a><a href="dashboard.html">Admin Dashboard</a>
+</div></div>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">Let's Connect</span>
+    <h1 style="font-size:clamp(2.2rem,4.4vw,3.4rem);">Find iConnect online</h1>
+    <p class="lead">Follow our official platforms for announcements, event recaps, and behind-the-scenes updates from the club.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="grid grid-3 reveal-stagger" id="socialGrid"></div>
+  </div>
+</section>
+
+<footer class="footer" id="footer"></footer>
+<button class="to-top" aria-label="Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+
+<script>
+window.SUPABASE_URL = "https://xeyqlbmvyhwdzqxcrhjv.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhleXFsYm12eWh3ZHpxeGNyaGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTk0NDYsImV4cCI6MjEwMDg5NTQ0Nn0.Cl6GkI0T14CsFXYcCF-bl1XdzRw-R_BA8oZIsmHcp1U";
+window.supabase = (window.SUPABASE_URL.startsWith("http") && window.supabase)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+window.IS_SUPABASE_CONFIGURED = !!window.supabase;
+</script>
+<script src="data.js?v=2"></script>
+<script src="footer.js?v=2"></script>
+<script src="main.js?v=2"></script>
+<script>
+const ICONS = {
+  facebook:'<path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H9v3h2v6h3v-6h2.5l.5-3H14V9.5c0-.3.2-.5.5-.5Z"/>',
+  instagram:'<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.4"/><circle cx="16.6" cy="7.4" r="1"/>',
+  tiktok:'<path d="M13 4v9.6a3 3 0 1 1-2.4-2.9M13 4c.4 2 1.9 3.4 3.8 3.6V10c-1.4 0-2.7-.4-3.8-1.2"/>',
+  youtube:'<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M11 10l4 2-4 2z" fill="currentColor" stroke="none"/>',
+  github:'<path d="M12 3a9 9 0 0 0-2.8 17.5c.4.1.6-.2.6-.4v-1.6c-2.5.5-3-1.1-3-1.1-.4-1-1-1.3-1-1.3-.8-.6.1-.6.1-.6 1 .1 1.4 1 1.4 1 .8 1.4 2.2 1 2.7.7.1-.6.3-1 .6-1.2-2-.2-4.1-1-4.1-4.4 0-1 .3-1.7.9-2.4-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.5 1a8.6 8.6 0 0 1 4.5 0c1.7-1.2 2.5-1 2.5-1 .5 1.3.2 2.3.1 2.5.6.7.9 1.5.9 2.4 0 3.4-2.1 4.2-4.1 4.4.3.3.6.8.6 1.7v2.5c0 .2.2.5.6.4A9 9 0 0 0 12 3Z"/>',
+  linkedin:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.2" cy="8.2" r="1.1" fill="currentColor" stroke="none"/><path d="M8.2 11v6M12 11v6c0-2.5 1-4 3-4s2.6 1.4 2.6 3.8V17"/>'
+};
+
+(async function(){
+  const socials = await getSocials();
+  document.getElementById('socialGrid').innerHTML = socials.map((s,i)=>{
+    const key = s.platform.toLowerCase();
+    return `
+    <div class="card social-card reveal" style="--i:${i}">
+      <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">${ICONS[key]||ICONS.facebook}</svg></div>
+      <h3>${escapeHtml(s.platform)}</h3>
+      <p style="font-size:.85rem;color:var(--ink-faint);margin-bottom:2px;">${escapeHtml(s.handle||'')}</p>
+      <p style="font-size:.9rem;">${escapeHtml(s.description||'')}</p>
+      <a href="${s.url}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Visit Page</a>
+    </div>`;
+  }).join('');
+})();
+</script>
+</body>
+</html>

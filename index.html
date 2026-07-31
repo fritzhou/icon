@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iConnect — Technology Club</title>
+<meta name="description" content="iConnect is our school's technology club — programming, web & mobile development, UI/UX, robotics, and digital innovation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<header class="navbar">
+  <div class="container nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8.1 7.3 10.6 15.4M15.9 7.3 13.4 15.4M8.3 6h7.4"/></svg>
+      </span>
+      iConnect
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="officers.html">Officers &amp; Members</a>
+      <a href="announcements.html">Announcements</a>
+      <a href="events.html">Events</a>
+      <a href="gallery.html">Documentation</a>
+      <a href="socials.html">Socials</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="dashboard.html" class="btn btn-ghost btn-sm">Admin Dashboard</a>
+    </div>
+    <button class="nav-toggle" aria-label="Open menu"><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu">
+  <div class="mobile-panel">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="officers.html">Officers &amp; Members</a>
+    <a href="announcements.html">Announcements</a>
+    <a href="events.html">Events</a>
+    <a href="gallery.html">Documentation</a>
+    <a href="socials.html">Socials</a>
+    <a href="dashboard.html">Admin Dashboard</a>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <canvas id="heroCanvas" class="hero-canvas"></canvas>
+  <div class="hero-glow"></div>
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow">School Technology Organization</span>
+      <h1>Where students<br>learn to build&nbsp;<span style="color:var(--primary)">what's&nbsp;next.</span></h1>
+      <p class="lead">iConnect is our school's technology club — a community of student developers, designers, and builders exploring programming, web &amp; mobile development, UI/UX, robotics, and digital innovation together.</p>
+      <div class="hero-actions">
+        <a href="about.html" class="btn btn-primary">Learn About Us</a>
+        <a href="events.html" class="btn btn-ghost">View Upcoming Events</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="card-float" style="top:6%; left:2%;">&lt;/&gt; building_projects: 37</div>
+      <div class="card-float" style="bottom:10%; right:0%; animation-delay:1.4s;">✓ workshop_signups: open</div>
+      <svg viewBox="0 0 420 420" width="100%" style="max-width:440px; margin:0 auto; display:block;">
+        <defs>
+          <linearGradient id="hg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2F8EDB"/><stop offset="1" stop-color="#1E4FA8"/>
+          </linearGradient>
+        </defs>
+        <circle cx="210" cy="210" r="170" fill="#FFFFFF" opacity=".55"/>
+        <circle cx="210" cy="210" r="170" fill="none" stroke="#85B8E8" stroke-width="1.5" stroke-dasharray="4 8"/>
+        <g stroke="url(#hg)" stroke-width="2" fill="none" opacity=".8">
+          <path d="M110 150 L210 110 L310 150"/>
+          <path d="M110 270 L210 310 L310 270"/>
+          <path d="M110 150 L110 270 M310 150 L310 270 M210 110 L210 310"/>
+        </g>
+        <g>
+          <circle cx="110" cy="150" r="9" fill="url(#hg)"/>
+          <circle cx="210" cy="110" r="9" fill="url(#hg)"/>
+          <circle cx="310" cy="150" r="9" fill="url(#hg)"/>
+          <circle cx="110" cy="270" r="9" fill="url(#hg)"/>
+          <circle cx="210" cy="310" r="12" fill="#1E4FA8"/>
+          <circle cx="310" cy="270" r="9" fill="url(#hg)"/>
+          <circle cx="210" cy="210" r="15" fill="#FFFFFF" stroke="url(#hg)" stroke-width="3"/>
+        </g>
+        <text x="210" y="216" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1E4FA8" font-weight="600">iC</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats-grid reveal-stagger">
+      <div class="stat-card reveal" style="--i:0"><div class="stat-num" id="statMembers">—</div><div class="stat-label">Total Members</div></div>
+      <div class="stat-card reveal" style="--i:1"><div class="stat-num" id="statOfficers">—</div><div class="stat-label">Officers</div></div>
+      <div class="stat-card reveal" style="--i:2"><div class="stat-num" id="statEvents">—</div><div class="stat-label">Events</div></div>
+      <div class="stat-card reveal" style="--i:3"><div class="stat-num" id="statProjects">—</div><div class="stat-label">Projects</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOCUS AREAS ============ -->
+<section class="section-tight">
+  <div class="container">
+    <div class="section-head center reveal">
+      <span class="eyebrow" style="justify-content:center">What We Build</span>
+      <h2>Eleven fields. One club.</h2>
+    </div>
+    <div class="grid grid-4" id="focusGrid">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ============ ANNOUNCEMENTS PREVIEW ============ -->
+<section class="section" style="background:var(--white);">
+  <div class="container">
+    <div class="toolbar reveal">
+      <div class="section-head" style="margin-bottom:0;">
+        <span class="eyebrow">Stay in the loop</span>
+        <h2>Latest Announcements</h2>
+      </div>
+      <a href="announcements.html" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div class="grid grid-3" id="announcementsPreview"></div>
+  </div>
+</section>
+
+<!-- ============ EVENTS PREVIEW ============ -->
+<section class="section">
+  <div class="container">
+    <div class="toolbar reveal">
+      <div class="section-head" style="margin-bottom:0;">
+        <span class="eyebrow">Mark your calendar</span>
+        <h2>Upcoming Events</h2>
+      </div>
+      <a href="events.html" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div class="grid grid-3" id="eventsPreview"></div>
+  </div>
+</section>
+
+<!-- ============ DOCUMENTATION PREVIEW ============ -->
+<section class="section" style="background:var(--white);">
+  <div class="container">
+    <div class="toolbar reveal">
+      <div class="section-head" style="margin-bottom:0;">
+        <span class="eyebrow">Moments captured</span>
+        <h2>Recent Documentation</h2>
+      </div>
+      <a href="gallery.html" class="btn btn-outline btn-sm">Browse Gallery</a>
+    </div>
+    <div class="grid grid-4" id="galleryPreview"></div>
+  </div>
+</section>
+
+<!-- ============ ADVISER + OFFICERS PREVIEW ============ -->
+<section class="section">
+  <div class="container">
+    <div class="section-head center reveal">
+      <span class="eyebrow" style="justify-content:center">The people behind iConnect</span>
+      <h2>Adviser &amp; Featured Officers</h2>
+    </div>
+    <div class="adviser-feature reveal" id="adviserPreview" style="margin-bottom:36px;"></div>
+    <div class="grid grid-4" id="officersPreview"></div>
+    <div style="text-align:center; margin-top:36px;">
+      <a href="officers.html" class="btn btn-primary">Meet the Full Team</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer" id="footer"></footer>
+
+<button class="to-top" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+window.SUPABASE_URL = "https://xeyqlbmvyhwdzqxcrhjv.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhleXFsYm12eWh3ZHpxeGNyaGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTk0NDYsImV4cCI6MjEwMDg5NTQ0Nn0.Cl6GkI0T14CsFXYcCF-bl1XdzRw-R_BA8oZIsmHcp1U";
+window.supabase = (window.SUPABASE_URL.startsWith("http") && window.supabase)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+window.IS_SUPABASE_CONFIGURED = !!window.supabase;
+</script>
+<script src="data.js?v=2"></script>
+<script src="footer.js?v=2"></script>
+<script src="main.js?v=2"></script>
+<script>
+const FOCUS_AREAS = [
+  ['Programming','Logic, algorithms, and problem-solving across languages.'],
+  ['Web Development','Building fast, responsive websites and web apps.'],
+  ['Mobile App Dev','Native and cross-platform apps for iOS and Android.'],
+  ['UI/UX Design','Research-driven interfaces people enjoy using.'],
+  ['Graphic Design','Visual identity, posters, and social media assets.'],
+  ['Video Editing','Event recaps, tutorials, and promotional content.'],
+  ['Computer Systems','Hardware, networking, and troubleshooting.'],
+  ['Multimedia','Audio, animation, and interactive media.'],
+  ['Tech Workshops','Peer-led sessions across every skill level.'],
+  ['Robotics','Designing, building, and programming robots.'],
+  ['Digital Innovation','Turning ideas into working prototypes.']
+];
+document.getElementById('focusGrid').innerHTML = FOCUS_AREAS.slice(0,8).map((f,i)=>`
+  <div class="card reveal" style="--i:${i}">
+    <div class="card-body">
+      <div style="width:42px;height:42px;border-radius:12px;background:rgba(47,142,219,.12);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E4FA8" stroke-width="1.8"><path d="M8 4 4 12l4 8M16 4l4 8-4 8M14 4l-4 16"/></svg>
+      </div>
+      <h3 style="font-size:1.05rem;">${f[0]}</h3>
+      <p style="font-size:.88rem;margin:0;">${f[1]}</p>
+    </div>
+  </div>`).join('');
+
+(async function loadHome(){
+  const stats = await getStats();
+  document.getElementById('statMembers').textContent = stats.members;
+  document.getElementById('statOfficers').textContent = stats.officers;
+  document.getElementById('statEvents').textContent = stats.events;
+  document.getElementById('statProjects').textContent = stats.projects;
+
+  const announcements = await getAnnouncements(3);
+  document.getElementById('announcementsPreview').innerHTML = announcements.map((a,i)=>`
+    <div class="card reveal" style="--i:${i}">
+      <div class="card-media">${a.cover_image ? `<img src="${a.cover_image}" alt="">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--light);"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 5-6 4 5"/></svg></div>`}</div>
+      <div class="card-body">
+        <span class="tag">${fmtDate(a.date_posted)}</span>
+        <h3 style="margin-top:12px;font-size:1.1rem;">${escapeHtml(a.title)}</h3>
+        <p style="font-size:.88rem;">${escapeHtml(a.description).slice(0,90)}${a.description.length>90?'…':''}</p>
+        <a href="announcements.html" class="btn btn-outline btn-sm">Read More</a>
+      </div>
+    </div>`).join('');
+
+  const events = (await getEvents()).filter(e=>e.status!=='completed').slice(0,3);
+  document.getElementById('eventsPreview').innerHTML = (events.length?events:(await getEvents()).slice(0,3)).map((e,i)=>`
+    <div class="card reveal" style="--i:${i}">
+      <div class="card-media">${e.banner_url ? `<img src="${e.banner_url}" alt="">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--light);"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></div>`}</div>
+      <div class="card-body">
+        <span class="tag tag-status-${e.status}">${e.status}</span>
+        <h3 style="margin-top:12px;font-size:1.1rem;">${escapeHtml(e.title)}</h3>
+        <p style="font-size:.85rem;">${fmtDate(e.date)} · ${e.venue||''}</p>
+      </div>
+    </div>`).join('');
+
+  const gallery = (await getGallery()).slice(0,4);
+  document.getElementById('galleryPreview').innerHTML = gallery.map((g,i)=>`
+    <div class="card reveal" style="--i:${i}">
+      <div class="card-media">${g.image_url ? `<img src="${g.image_url}" alt="">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--light);background:var(--grad-soft);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>`}</div>
+      <div class="card-body" style="padding:14px;">
+        <p style="font-size:.82rem;font-weight:600;color:var(--ink);margin:0;">${escapeHtml(g.title||'')}</p>
+        <p style="font-size:.75rem;margin:0;">${escapeHtml(g.event||'')}</p>
+      </div>
+    </div>`).join('');
+
+  const adviser = await getAdviser();
+  document.getElementById('adviserPreview').innerHTML = `
+    ${adviser.photo_url ? `<img src="${adviser.photo_url}" class="profile-photo" alt="${adviser.full_name}">` : `<div class="profile-photo" style="display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-size:2.4rem;color:var(--primary);">${initials(adviser.full_name)}</div>`}
+    <div>
+      <span class="eyebrow">${adviser.position}</span>
+      <h3 style="font-size:1.6rem;">${escapeHtml(adviser.full_name)}</h3>
+      <p>${escapeHtml(adviser.bio||'')}</p>
+    </div>`;
+
+  const officers = (await getOfficers()).slice(0,4);
+  document.getElementById('officersPreview').innerHTML = officers.map((o,i)=>`
+    <div class="card officer-card reveal" style="--i:${i}">
+      ${o.photo_url ? `<img src="${o.photo_url}" class="profile-photo round" alt="${o.full_name}">` : `<div class="profile-photo round" style="display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-weight:700;color:var(--primary);">${initials(o.full_name)}</div>`}
+      <div class="position">${o.position}</div>
+      <h3 style="font-size:1rem;">${escapeHtml(o.full_name)}</h3>
+      <div class="grade">${o.grade_section||''}</div>
+    </div>`).join('');
+
+  document.querySelectorAll('.reveal').forEach(el=>{
+    const rect = el.getBoundingClientRect();
+    if(rect.top < window.innerHeight) el.classList.add('in');
+  });
+})();
+</script>
+</body>
+</html>

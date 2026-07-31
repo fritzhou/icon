@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Officer Login — iConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="auth-shell">
+  <canvas id="heroCanvas" class="hero-canvas" style="position:fixed;"></canvas>
+  <div class="auth-card">
+    <a href="index.html" class="brand" style="justify-content:center; margin-bottom:26px;">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8.1 7.3 10.6 15.4M15.9 7.3 13.4 15.4M8.3 6h7.4"/></svg></span>
+      iConnect
+    </a>
+    <span class="eyebrow" style="justify-content:center; width:100%;">Officer Access</span>
+    <h2 style="text-align:center; font-size:1.6rem;">Sign in to the dashboard</h2>
+    <p style="text-align:center; font-size:.88rem; margin-bottom:24px;">Officer accounts only. Contact the President if you need access.</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" required placeholder="you@school.edu">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" required placeholder="••••••••">
+      </div>
+      <div id="loginError" class="field-error" style="display:none; margin-bottom:14px;"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="loginBtn">Sign In</button>
+    </form>
+    <p style="text-align:center; font-size:.82rem; margin-top:22px;">
+      <a href="index.html" style="color:var(--primary); font-weight:600;">← Back to website</a>
+    </p>
+  </div>
+</div>
+
+<div id="debugPanel" style="position:fixed;bottom:10px;left:10px;right:10px;background:#111;color:#0f0;font-family:monospace;font-size:11px;padding:10px;border-radius:8px;z-index:9999;white-space:pre-wrap;"></div>
+
+<script>
+/* Inlined directly (instead of a separate <script src="supabase-config.js">)
+   because that external file was mysteriously failing to define its
+   globals even though fetch() proved the file itself is byte-perfect
+   and valid JS. This sidesteps the issue entirely. */
+window.SUPABASE_URL = "https://xeyqlbmvyhwdzqxcrhjv.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhleXFsYm12eWh3ZHpxeGNyaGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTk0NDYsImV4cCI6MjEwMDg5NTQ0Nn0.Cl6GkI0T14CsFXYcCF-bl1XdzRw-R_BA8oZIsmHcp1U";
+window.supabase = (window.SUPABASE_URL.startsWith("http") && window.supabase)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+window.IS_SUPABASE_CONFIGURED = !!window.supabase;
+</script>
+<script src="data.js?v=2" onerror="document.getElementById('debugPanel').innerHTML += '❌ FAILED TO LOAD: data.js\n'"></script>
+<script src="auth.js?v=2" onerror="document.getElementById('debugPanel').innerHTML += '❌ FAILED TO LOAD: auth.js\n'"></script>
+<script src="main.js?v=2" onerror="document.getElementById('debugPanel').innerHTML += '❌ FAILED TO LOAD: main.js\n'"></script>
+<script>
+(async function(){
+  const panel = document.getElementById('debugPanel');
+  const lines = [];
+  lines.push('window.supabase (client): ' + (typeof window.supabase));
+  lines.push('SUPABASE_URL: ' + (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : 'UNDEFINED'));
+  lines.push('IS_SUPABASE_CONFIGURED: ' + (typeof IS_SUPABASE_CONFIGURED !== 'undefined' ? IS_SUPABASE_CONFIGURED : 'UNDEFINED'));
+  lines.push('loginWithEmail fn: ' + (typeof loginWithEmail));
+  panel.innerHTML += lines.join('\n');
+})();
+</script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  btn.disabled = true; btn.innerHTML = `<span class="spinner" style="border-color:rgba(255,255,255,.4);border-top-color:#fff;"></span>`;
+  try{
+    if(!IS_SUPABASE_CONFIGURED){
+      // Preview mode: no backend connected yet — go straight to the dashboard preview.
+      location.href = 'dashboard.html';
+      return;
+    }
+    await loginWithEmail(email, password);
+    location.href = 'dashboard.html';
+  }catch(err){
+    errEl.textContent = err.message || 'Invalid email or password.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+});
+
+// If already logged in, skip straight to dashboard
+(async ()=>{
+  if(IS_SUPABASE_CONFIGURED){
+    const session = await getCurrentSession();
+    if(session) location.href = 'dashboard.html';
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,403 @@
+/* =========================================================
+   iConnect — Admin Dashboard
+   Generic, config-driven CRUD: one renderer + one form builder
+   drive every section (officers, members, announcements,
+   events, gallery, socials). Works in demo mode (in-memory)
+   when Supabase isn't configured yet, so the dashboard is
+   always previewable.
+   ========================================================= */
+
+let CURRENT_PROFILE = null;
+let DEMO_STORE = null; // lazily cloned from DEMO_DATA when in demo mode
+
+const ICONS = {
+  overview:'<path d="M3 12h4v8H3zM10 4h4v16h-4zM17 9h4v11h-4z"/>',
+  officers:'<circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-6 7-6s7 2.7 7 6"/><circle cx="17" cy="8" r="2.4"/><path d="M22 20c0-2.6-2-4.8-4.7-5.6"/>',
+  members:'<circle cx="12" cy="8" r="3.4"/><path d="M4 20c0-3.6 3.6-6.5 8-6.5s8 2.9 8 6.5"/>',
+  announcements:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 5-6 4 5"/>',
+  events:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  gallery:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9c.2.5.7.9 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1Z"/>',
+  accounts:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',
+  approvals:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'
+};
+
+const NAV_SECTIONS = [
+  { id:'overview', label:'Overview', roles:['president','secretary','treasurer','auditor','public_information_officer','documentation_officer','technical_officer','adviser'] },
+  { id:'officers', label:'Officers', roles:['president'] },
+  { id:'members', label:'Members', roles:['president'] },
+  { id:'announcements', label:'Announcements', roles:['president','secretary','public_information_officer'] },
+  { id:'events', label:'Events', roles:['president','secretary'] },
+  { id:'gallery', label:'Gallery', roles:['president','documentation_officer'] },
+  { id:'accounts', label:'User Accounts', roles:['president'] },
+  { id:'settings', label:'Website Settings', roles:['president'] },
+  { id:'approvals', label:'Approvals', roles:['adviser'] },
+];
+
+const TABLE_CONFIGS = {
+  officers: {
+    table:'officers', title:'Officers', singular:'Officer',
+    columns:[['full_name','Name'],['position','Position'],['grade_section','Grade & Section']],
+    fields:[
+      {key:'full_name', label:'Full Name', type:'text', required:true},
+      {key:'position', label:'Position', type:'select', required:true, options:['President','Vice President','Secretary','Treasurer','Auditor','Public Information Officer','Documentation Officer','Technical Officer']},
+      {key:'role', label:'System Role', type:'select', required:true, options:['president','vice_president','secretary','treasurer','auditor','public_information_officer','documentation_officer','technical_officer']},
+      {key:'grade_section', label:'Grade & Section', type:'text'},
+      {key:'bio', label:'Short Bio', type:'textarea'},
+      {key:'skills', label:'Skills (comma-separated)', type:'tags'},
+      {key:'photo_url', label:'Profile Photo URL', type:'text'},
+    ]
+  },
+  members: {
+    table:'members', title:'Members', singular:'Member',
+    columns:[['full_name','Name'],['committee','Committee'],['grade_section','Grade & Section']],
+    fields:[
+      {key:'full_name', label:'Full Name', type:'text', required:true},
+      {key:'grade_section', label:'Grade & Section', type:'text'},
+      {key:'committee', label:'Committee / Role', type:'text'},
+      {key:'bio', label:'Short Description', type:'textarea'},
+      {key:'photo_url', label:'Profile Photo URL', type:'text'},
+    ]
+  },
+  announcements: {
+    table:'announcements', title:'Announcements', singular:'Announcement',
+    columns:[['title','Title'],['date_posted','Date'],['posted_by','Posted By'],['status','Status']],
+    fields:[
+      {key:'title', label:'Title', type:'text', required:true},
+      {key:'description', label:'Description', type:'textarea', required:true},
+      {key:'cover_image', label:'Cover Image URL', type:'text'},
+      {key:'date_posted', label:'Date Posted', type:'date'},
+      {key:'posted_by', label:'Posted By', type:'text'},
+      {key:'status', label:'Status', type:'select', options:['draft','pending','published'], default:'published'},
+    ]
+  },
+  events: {
+    table:'events', title:'Events', singular:'Event',
+    columns:[['title','Title'],['date','Date'],['venue','Venue'],['status','Status']],
+    fields:[
+      {key:'title', label:'Event Title', type:'text', required:true},
+      {key:'date', label:'Date', type:'date', required:true},
+      {key:'time', label:'Time', type:'text'},
+      {key:'venue', label:'Venue', type:'text'},
+      {key:'description', label:'Description', type:'textarea'},
+      {key:'banner_url', label:'Banner Image URL', type:'text'},
+      {key:'status', label:'Status', type:'select', options:['upcoming','ongoing','completed'], default:'upcoming'},
+    ]
+  },
+  gallery: {
+    table:'gallery', title:'Gallery', singular:'Photo',
+    columns:[['title','Title'],['event','Event'],['uploaded_by','Uploaded By'],['upload_date','Date']],
+    fields:[
+      {key:'title', label:'Title', type:'text', required:true},
+      {key:'event', label:'Event / Album', type:'text'},
+      {key:'image_url', label:'Image URL', type:'text', required:true},
+      {key:'caption', label:'Caption', type:'textarea'},
+      {key:'uploaded_by', label:'Uploaded By', type:'text'},
+      {key:'upload_date', label:'Upload Date', type:'date'},
+      {key:'approved', label:'Approved for public view', type:'checkbox', default:true},
+    ]
+  },
+  social_links: {
+    table:'social_links', title:'Social Links', singular:'Social Link',
+    columns:[['platform','Platform'],['handle','Handle'],['url','URL']],
+    fields:[
+      {key:'platform', label:'Platform', type:'select', required:true, options:['Facebook','Instagram','TikTok','YouTube','GitHub','LinkedIn']},
+      {key:'handle', label:'Handle', type:'text'},
+      {key:'description', label:'Short Description', type:'text'},
+      {key:'url', label:'Official Page URL', type:'text', required:true},
+    ]
+  }
+};
+
+/* ---------- Boot ---------- */
+(async function boot(){
+  CURRENT_PROFILE = await requireAuth();
+  if(!CURRENT_PROFILE) return;
+
+  document.getElementById('userName').textContent = CURRENT_PROFILE.full_name || 'Officer';
+  document.getElementById('roleBadge').textContent = (CURRENT_PROFILE.role || 'officer').replace(/_/g,' ');
+
+  if(!IS_SUPABASE_CONFIGURED){
+    DEMO_STORE = {
+      officers: DEMO_DATA.officers.map((o,i)=>({ id:'demo-'+i, ...o, role: o.position.toLowerCase().replace(/ /g,'_') })),
+      members: DEMO_DATA.members.map((m,i)=>({ id:'demo-'+i, ...m })),
+      announcements: DEMO_DATA.announcements.map(a=>({ ...a, status:'published' })),
+      events: DEMO_DATA.events.map(e=>({...e})),
+      gallery: DEMO_DATA.gallery.map(g=>({...g, approved:true})),
+      social_links: DEMO_DATA.socials.map((s,i)=>({ id:'demo-'+i, ...s }))
+    };
+  }
+
+  renderNav();
+  goToSection(location.hash.replace('#','') || 'overview');
+
+  document.getElementById('mobileSideToggle')?.addEventListener('click', ()=>{
+    document.getElementById('dashSide').classList.toggle('open');
+  });
+  window.addEventListener('resize', ()=>{
+    document.getElementById('mobileSideToggle').style.display = window.innerWidth <= 900 ? 'inline-flex' : 'none';
+  });
+  document.getElementById('mobileSideToggle').style.display = window.innerWidth <= 900 ? 'inline-flex' : 'none';
+})();
+
+function renderNav(){
+  const nav = document.getElementById('dashNav');
+  const items = NAV_SECTIONS.filter(s => s.roles.includes(CURRENT_PROFILE.role));
+  nav.innerHTML = items.map(s => `
+    <a href="#${s.id}" data-section="${s.id}" class="${s.id==='overview'?'active':''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${ICONS[s.id]}</svg>
+      ${s.label}
+    </a>`).join('');
+  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', (e)=>{
+    e.preventDefault();
+    goToSection(a.dataset.section);
+  }));
+}
+
+function goToSection(id){
+  if(!NAV_SECTIONS.some(s=>s.id===id && s.roles.includes(CURRENT_PROFILE.role))) id = 'overview';
+  document.querySelectorAll('#dashNav a').forEach(a=> a.classList.toggle('active', a.dataset.section===id));
+  location.hash = id;
+  document.getElementById('dashSide').classList.remove('open');
+  const meta = NAV_SECTIONS.find(s=>s.id===id);
+  document.getElementById('sectionTitle').textContent = meta ? meta.label : 'Overview';
+  document.getElementById('sectionSubtitle').textContent = sectionSubtitle(id);
+
+  if(id === 'overview') renderOverview();
+  else if(id === 'approvals') renderApprovals();
+  else if(id === 'settings') renderSettings();
+  else if(TABLE_CONFIGS[id]) renderCrudSection(TABLE_CONFIGS[id]);
+  else document.getElementById('dashContent').innerHTML = `<div class="empty-state">Section coming soon.</div>`;
+}
+
+function sectionSubtitle(id){
+  return {
+    overview:'A quick snapshot of iConnect content.',
+    officers:'Add, edit, or remove officer profiles and their roles.',
+    members:'Manage the member roster shown on the public site.',
+    announcements:'Publish updates that appear on the Announcements page.',
+    events:'Keep upcoming, ongoing, and completed events current.',
+    gallery:'Upload and organize documentation photos by event.',
+    accounts:'Manage which officers have dashboard access and their role.',
+    settings:'Update site-wide information and homepage highlights.',
+    approvals:'Review announcements and photos awaiting approval.'
+  }[id] || '';
+}
+
+/* ---------- Overview ---------- */
+async function renderOverview(){
+  const stats = await getStats();
+  document.getElementById('dashContent').innerHTML = `
+    <div class="stats-grid" style="margin-top:0;">
+      <div class="stat-card"><div class="stat-num">${stats.members}</div><div class="stat-label">Total Members</div></div>
+      <div class="stat-card"><div class="stat-num">${stats.officers}</div><div class="stat-label">Officers</div></div>
+      <div class="stat-card"><div class="stat-num">${stats.events}</div><div class="stat-label">Events</div></div>
+      <div class="stat-card"><div class="stat-num">${stats.projects}</div><div class="stat-label">Projects</div></div>
+    </div>
+    <div class="dash-card" style="margin-top:28px; padding:24px;">
+      <h3 style="font-size:1rem;">Signed in as</h3>
+      <p style="margin:0;">${escapeHtml(CURRENT_PROFILE.full_name)} — ${escapeHtml(CURRENT_PROFILE.position || CURRENT_PROFILE.role)}</p>
+      ${!IS_SUPABASE_CONFIGURED ? `<p style="margin-top:10px; font-size:.85rem; color:#B25B00;">Preview mode: connect Supabase in <span class="mono">js/supabase-config.js</span> to persist real data. Edits made here won't be saved.</p>` : ''}
+    </div>`;
+}
+
+/* ---------- Generic CRUD ---------- */
+async function fetchRows(config){
+  if(!IS_SUPABASE_CONFIGURED) return DEMO_STORE[config.table];
+  const { data, error } = await supabase.from(config.table).select('*').order('created_at', { ascending:false });
+  if(error){ showToast(`Couldn't load ${config.title}: ${error.message}`, 'error'); return []; }
+  return data;
+}
+
+async function renderCrudSection(config){
+  const canEdit = canAccess(CURRENT_PROFILE.role, config.table === 'social_links' ? 'settings' : config.table);
+  const rows = await fetchRows(config);
+  const content = document.getElementById('dashContent');
+  content.innerHTML = `
+    <div class="toolbar" style="margin-bottom:20px;">
+      <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="crudSearch" placeholder="Search ${config.title.toLowerCase()}..."></div>
+      ${canEdit ? `<button class="btn btn-primary btn-sm" id="crudAddBtn">+ Add ${config.singular}</button>` : ''}
+    </div>
+    <div class="dash-card" style="overflow-x:auto;">
+      <table class="dash-table">
+        <thead><tr>${config.columns.map(c=>`<th>${c[1]}</th>`).join('')}<th style="width:110px;">Actions</th></tr></thead>
+        <tbody id="crudBody"></tbody>
+      </table>
+    </div>`;
+
+  function paint(list){
+    const body = document.getElementById('crudBody');
+    if(!list.length){
+      body.innerHTML = `<tr><td colspan="${config.columns.length+1}"><div class="empty-state">No ${config.title.toLowerCase()} yet.</div></td></tr>`;
+      return;
+    }
+    body.innerHTML = list.map(row => `
+      <tr>
+        ${config.columns.map(c=>`<td>${escapeHtml(String(row[c[0]] ?? '')).slice(0,60)}</td>`).join('')}
+        <td>
+          ${canEdit ? `<button class="icon-btn crud-edit" data-id="${row.id}" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+          <button class="icon-btn danger crud-delete" data-id="${row.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></button>` : `<span class="mono" style="font-size:.75rem;color:var(--ink-faint);">read only</span>`}
+        </td>
+      </tr>`).join('');
+
+    if(canEdit){
+      body.querySelectorAll('.crud-edit').forEach(b=> b.addEventListener('click', ()=> openCrudModal(config, list.find(r=>String(r.id)===b.dataset.id))));
+      body.querySelectorAll('.crud-delete').forEach(b=> b.addEventListener('click', ()=> confirmDelete(config, b.dataset.id)));
+    }
+  }
+  paint(rows);
+
+  document.getElementById('crudSearch').addEventListener('input', (e)=>{
+    const q = e.target.value.toLowerCase();
+    paint(rows.filter(r => config.columns.some(c => String(r[c[0]] ?? '').toLowerCase().includes(q))));
+  });
+  document.getElementById('crudAddBtn')?.addEventListener('click', ()=> openCrudModal(config, null));
+
+  // stash for delete/refresh
+  content._rows = rows;
+  content._repaint = () => renderCrudSection(config);
+}
+
+function openCrudModal(config, record){
+  const isEdit = !!record;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <h3 style="margin:0;">${isEdit ? 'Edit' : 'Add'} ${config.singular}</h3>
+      <button class="modal-close" id="modalCloseBtn">✕</button>
+    </div>
+    <form id="crudForm">
+      ${config.fields.map(f => renderField(f, record)).join('')}
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top:6px;">${isEdit ? 'Save Changes' : 'Add ' + config.singular}</button>
+    </form>`;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+
+  document.getElementById('crudForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const payload = {};
+    config.fields.forEach(f=>{
+      const el = document.getElementById('f_'+f.key);
+      if(f.type === 'checkbox') payload[f.key] = el.checked;
+      else if(f.type === 'tags') payload[f.key] = el.value.split(',').map(s=>s.trim()).filter(Boolean);
+      else payload[f.key] = el.value;
+    });
+    await saveCrudRecord(config, record, payload);
+  });
+}
+
+function renderField(f, record){
+  const val = record ? record[f.key] : (f.default ?? '');
+  const id = 'f_'+f.key;
+  if(f.type === 'textarea') return `<div class="field"><label for="${id}">${f.label}</label><textarea id="${id}" ${f.required?'required':''}>${escapeHtml(val||'')}</textarea></div>`;
+  if(f.type === 'select') return `<div class="field"><label for="${id}">${f.label}</label><select id="${id}">${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  if(f.type === 'checkbox') return `<div class="field"><label><input type="checkbox" id="${id}" ${val?'checked':''} style="width:auto;margin-right:8px;"> ${f.label}</label></div>`;
+  if(f.type === 'tags') return `<div class="field"><label for="${id}">${f.label}</label><input type="text" id="${id}" value="${escapeHtml(Array.isArray(val)?val.join(', '):(val||''))}"><div class="field-hint">Separate with commas</div></div>`;
+  if(f.type === 'date') return `<div class="field"><label for="${id}">${f.label}</label><input type="date" id="${id}" value="${val||''}" ${f.required?'required':''}></div>`;
+  return `<div class="field"><label for="${id}">${f.label}</label><input type="text" id="${id}" value="${escapeHtml(val||'')}" ${f.required?'required':''}></div>`;
+}
+
+async function saveCrudRecord(config, existing, payload){
+  try{
+    if(!IS_SUPABASE_CONFIGURED){
+      const store = DEMO_STORE[config.table];
+      if(existing){
+        Object.assign(store.find(r=>r.id===existing.id), payload);
+      } else {
+        store.unshift({ id:'demo-'+Date.now(), ...payload });
+      }
+      showToast(`${config.singular} saved (preview mode — not persisted).`, 'success');
+    } else {
+      if(existing){
+        const { error } = await supabase.from(config.table).update(payload).eq('id', existing.id);
+        if(error) throw error;
+      } else {
+        const { error } = await supabase.from(config.table).insert(payload);
+        if(error) throw error;
+      }
+      showToast(`${config.singular} saved.`, 'success');
+    }
+    closeModal();
+    renderCrudSection(config);
+  }catch(err){
+    showToast(err.message || 'Something went wrong.', 'error');
+  }
+}
+
+async function confirmDelete(config, id){
+  if(!confirm(`Delete this ${config.singular.toLowerCase()}? This can't be undone.`)) return;
+  try{
+    if(!IS_SUPABASE_CONFIGURED){
+      DEMO_STORE[config.table] = DEMO_STORE[config.table].filter(r=>String(r.id)!==id);
+      showToast(`${config.singular} deleted (preview mode).`, 'success');
+    } else {
+      const { error } = await supabase.from(config.table).delete().eq('id', id);
+      if(error) throw error;
+      showToast(`${config.singular} deleted.`, 'success');
+    }
+    renderCrudSection(config);
+  }catch(err){
+    showToast(err.message || 'Could not delete.', 'error');
+  }
+}
+
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+document.addEventListener('click', (e)=>{ if(e.target.id === 'modalOverlay') closeModal(); });
+
+/* ---------- Approvals (adviser) ---------- */
+async function renderApprovals(){
+  const content = document.getElementById('dashContent');
+  content.innerHTML = `<div class="dash-card" style="padding:24px;"><p>The adviser reviews announcements and gallery uploads before they go public. Approve items from the Announcements and Gallery sections once granted edit access, or coordinate with the President for pending items.</p></div>`;
+}
+
+/* ---------- Settings ---------- */
+async function renderSettings(){
+  const content = document.getElementById('dashContent');
+  content.innerHTML = `
+    <div class="dash-card" style="padding:28px; max-width:640px;">
+      <h3 style="font-size:1.05rem;">Homepage Statistics</h3>
+      <p style="font-size:.85rem;">These numbers power the counters on the homepage.</p>
+      <form id="statsForm">
+        <div class="grid grid-2">
+          <div class="field"><label>Total Members</label><input type="number" id="s_members"></div>
+          <div class="field"><label>Officers</label><input type="number" id="s_officers"></div>
+          <div class="field"><label>Events</label><input type="number" id="s_events"></div>
+          <div class="field"><label>Projects</label><input type="number" id="s_projects"></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Save Statistics</button>
+      </form>
+    </div>
+    <div class="dash-card" style="padding:28px; max-width:640px; margin-top:22px;">
+      <h3 style="font-size:1.05rem;">Social Links</h3>
+      <p style="font-size:.85rem;">Manage the platforms shown on the Socials page and footer.</p>
+      <div id="socialsMiniList"></div>
+      <button class="btn btn-outline btn-sm" id="addSocialBtn" style="margin-top:12px;">+ Add Platform</button>
+    </div>`;
+
+  const stats = await getStats();
+  document.getElementById('s_members').value = stats.members;
+  document.getElementById('s_officers').value = stats.officers;
+  document.getElementById('s_events').value = stats.events;
+  document.getElementById('s_projects').value = stats.projects;
+  document.getElementById('statsForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const payload = {
+      members:+document.getElementById('s_members').value,
+      officers:+document.getElementById('s_officers').value,
+      events:+document.getElementById('s_events').value,
+      projects:+document.getElementById('s_projects').value
+    };
+    if(!IS_SUPABASE_CONFIGURED){ showToast('Statistics saved (preview mode).', 'success'); return; }
+    const { error } = await supabase.from('site_stats').update(payload).eq('id', 1);
+    if(error) showToast(error.message, 'error'); else showToast('Statistics saved.', 'success');
+  });
+
+  const socials = await getSocials();
+  document.getElementById('socialsMiniList').innerHTML = socials.map(s=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-soft);">
+      <span style="font-size:.88rem;"><strong>${escapeHtml(s.platform)}</strong> — ${escapeHtml(s.url)}</span>
+    </div>`).join('');
+  document.getElementById('addSocialBtn').addEventListener('click', ()=> openCrudModal(TABLE_CONFIGS.social_links, null));
+}
+
+window.addEventListener('hashchange', ()=> goToSection(location.hash.replace('#','')));

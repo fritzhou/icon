@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — iConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="dash-shell">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="dash-side" id="dashSide">
+    <div class="brand">
+      <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8.1 7.3 10.6 15.4M15.9 7.3 13.4 15.4M8.3 6h7.4"/></svg></span>
+      iConnect
+    </div>
+    <nav class="dash-nav" id="dashNav"></nav>
+    <div style="margin-top:24px; padding-top:18px; border-top:1px solid rgba(255,255,255,.14);">
+      <a href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg> View Website</a>
+      <a href="index.html" id="logoutLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Exit Admin</a>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="dash-main">
+    <div class="dash-topbar">
+      <div>
+        <button class="btn btn-ghost btn-sm" id="mobileSideToggle" style="display:none; margin-bottom:10px;">☰ Menu</button>
+        <h2 id="sectionTitle" style="margin:0; font-size:1.6rem;">Overview</h2>
+        <p style="margin:0; font-size:.85rem;" id="sectionSubtitle">Welcome back to the iConnect admin dashboard.</p>
+      </div>
+      <div class="dash-user">
+        <span class="role-badge" id="roleBadge">—</span>
+        <span id="userName" style="font-weight:600;">—</span>
+      </div>
+    </div>
+
+    <div id="dashContent"><!-- sections rendered by dashboard.js --></div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<script src="main.js?v=2"></script>
+<script>
+window.SUPABASE_URL = "https://xeyqlbmvyhwdzqxcrhjv.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhleXFsYm12eWh3ZHpxeGNyaGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTk0NDYsImV4cCI6MjEwMDg5NTQ0Nn0.Cl6GkI0T14CsFXYcCF-bl1XdzRw-R_BA8oZIsmHcp1U";
+window.supabase = (window.SUPABASE_URL.startsWith("http") && window.supabase)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+window.IS_SUPABASE_CONFIGURED = !!window.supabase;
+</script>
+<script src="data.js?v=2"></script>
+<script src="auth.js?v=2"></script>
+<script src="dashboard.js?v=2"></script>
+</body>
+</html>

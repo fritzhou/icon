@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Announcements — iConnect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="navbar">
+  <div class="container nav-inner">
+    <a href="index.html" class="brand"><span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="12" cy="18" r="2.4"/><path d="M8.1 7.3 10.6 15.4M15.9 7.3 13.4 15.4M8.3 6h7.4"/></svg></span>iConnect</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="officers.html">Officers &amp; Members</a>
+      <a href="announcements.html">Announcements</a><a href="events.html">Events</a><a href="gallery.html">Documentation</a>
+      <a href="socials.html">Socials</a>
+    </nav>
+    <div class="nav-actions"><a href="dashboard.html" class="btn btn-ghost btn-sm">Admin Dashboard</a></div>
+    <button class="nav-toggle" aria-label="Open menu"><span></span></button>
+  </div>
+</header>
+<div class="mobile-menu"><div class="mobile-panel">
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="officers.html">Officers &amp; Members</a>
+  <a href="announcements.html">Announcements</a><a href="events.html">Events</a><a href="gallery.html">Documentation</a>
+  <a href="socials.html">Socials</a><a href="dashboard.html">Admin Dashboard</a>
+</div></div>
+
+<section class="page-header">
+  <div class="container">
+    <span class="eyebrow">Stay in the Loop</span>
+    <h1 style="font-size:clamp(2.2rem,4.4vw,3.4rem);">Announcements</h1>
+    <p class="lead">Official updates from iConnect officers — newest posts first.</p>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="container">
+    <div class="toolbar reveal">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="annSearch" placeholder="Search announcements...">
+      </div>
+    </div>
+    <div class="grid grid-3 reveal-stagger" id="annGrid"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</section>
+
+<footer class="footer" id="footer"></footer>
+<button class="to-top" aria-label="Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+
+<script>
+window.SUPABASE_URL = "https://xeyqlbmvyhwdzqxcrhjv.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhleXFsYm12eWh3ZHpxeGNyaGp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMTk0NDYsImV4cCI6MjEwMDg5NTQ0Nn0.Cl6GkI0T14CsFXYcCF-bl1XdzRw-R_BA8oZIsmHcp1U";
+window.supabase = (window.SUPABASE_URL.startsWith("http") && window.supabase)
+  ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY)
+  : null;
+window.IS_SUPABASE_CONFIGURED = !!window.supabase;
+</script>
+<script src="data.js?v=2"></script>
+<script src="footer.js?v=2"></script>
+<script src="main.js?v=2"></script>
+<script>
+const PAGE_SIZE = 6;
+let currentPage = 1;
+let ALL_ANNOUNCEMENTS = [];
+
+function renderAnnouncements(){
+  const q = (document.getElementById('annSearch').value || '').toLowerCase();
+  const filtered = ALL_ANNOUNCEMENTS.filter(a =>
+    !q || a.title.toLowerCase().includes(q) || a.description.toLowerCase().includes(q));
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  if(currentPage > totalPages) currentPage = 1;
+  const pageItems = filtered.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  const grid = document.getElementById('annGrid');
+  if(!pageItems.length){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 5-6 4 5"/></svg>
+      <p>No announcements match your search.</p></div>`;
+  } else {
+    grid.innerHTML = pageItems.map((a,i)=>`
+      <div class="card reveal in" style="--i:${i%6}">
+        <div class="card-media">${a.cover_image ? `<img src="${a.cover_image}" alt="">` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--light);"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 5-6 4 5"/></svg></div>`}</div>
+        <div class="card-body">
+          <span class="tag">${fmtDate(a.date_posted)}</span>
+          <h3 style="margin-top:12px;font-size:1.1rem;">${escapeHtml(a.title)}</h3>
+          <p style="font-size:.88rem;">${escapeHtml(a.description)}</p>
+          <p style="font-size:.75rem;color:var(--ink-faint);margin-bottom:16px;">Posted by ${escapeHtml(a.posted_by||'iConnect Officers')}</p>
+          <button class="btn btn-outline btn-sm ann-readmore" data-title="${escapeHtml(a.title)}" data-desc="${escapeHtml(a.description)}">Read More</button>
+        </div>
+      </div>`).join('');
+  }
+
+  const pag = document.getElementById('pagination');
+  pag.innerHTML = totalPages > 1 ? Array.from({length: totalPages}, (_,i)=>
+    `<button class="${i+1===currentPage?'active':''}" data-page="${i+1}">${i+1}</button>`).join('') : '';
+  pag.querySelectorAll('button').forEach(b => b.addEventListener('click', ()=>{
+    currentPage = parseInt(b.dataset.page); renderAnnouncements();
+    document.getElementById('annGrid').scrollIntoView({behavior:'smooth', block:'start'});
+  }));
+
+  grid.querySelectorAll('.ann-readmore').forEach(btn => btn.addEventListener('click', ()=>{
+    alert(`${btn.dataset.title}\n\n${btn.dataset.desc}`);
+  }));
+}
+
+(async function(){
+  ALL_ANNOUNCEMENTS = await getAnnouncements();
+  renderAnnouncements();
+  document.getElementById('annSearch').addEventListener('input', ()=>{ currentPage = 1; renderAnnouncements(); });
+})();
+</script>
+</body>
+</html>
